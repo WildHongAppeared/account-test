@@ -44,7 +44,7 @@ func (i *AccountPortImpl) InsertAccount(ctx context.Context, id string, balance 
 		i.dbConfig.Schema, static.TableAccount,
 	)
 
-	_, err = i.db.ExecContext(
+	_, err = tx.ExecContext(
 		ctx,
 		query,
 		id,

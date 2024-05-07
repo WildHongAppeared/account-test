@@ -20,7 +20,7 @@ type AccountSvcImpl struct {
 	accountRepo ports.AccountRepository
 }
 
-type UserSvc interface {
+type AccountSvc interface {
 	PostAccount(w http.ResponseWriter, r *http.Request)
 	GetAccount(w http.ResponseWriter, r *http.Request)
 }
@@ -71,10 +71,10 @@ func (srv *AccountSvcImpl) PostAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = srv.accountRepo.InsertAccount(ctx, postAccountBody.ID, accountBalance)
+	err = srv.accountRepo.InsertAccount(ctx, postAccountBody.ID, utils.ToFixed(accountBalance, 4))
 	if err != nil {
 		log.Println("InsertAccount error - ", err.Error())
-		http.Error(w, static.ErrCreatingAccount, http.StatusBadRequest)
+		http.Error(w, static.ErrCreatingAccount, http.StatusInternalServerError)
 		return
 	}
 	utils.JSONResponse(w, http.StatusOK, nil)
@@ -98,7 +98,8 @@ func (srv *AccountSvcImpl) GetAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	account, err := srv.accountRepo.GetAccount(ctx, accountId)
 	if err != nil {
-		http.Error(w, static.ErrUnableToRetrieveAccount, http.StatusBadRequest)
+		log.Println("GetAccount error - ", err.Error())
+		http.Error(w, static.ErrUnableToRetrieveAccount, http.StatusInternalServerError)
 		return
 	}
 	utils.JSONResponse(w, http.StatusOK, account)

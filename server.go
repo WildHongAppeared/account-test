@@ -30,15 +30,19 @@ func main() {
 		panic(err)
 	}
 	accountPort := repositories.NewAccountPort(dbClient, appConfig.DB)
+	transactionPort := repositories.NewTransactionPort(dbClient, appConfig.DB)
+
 	accountSvc := services.NewAccountSvc(accountPort)
+	transactionSvc := services.NewTransactionSvc(accountPort, transactionPort)
 	// End of Dependency Injection
 
 	r.Group(func(r chi.Router) {
-
-		// webhooks:
 		r.Route("/accounts", func(route chi.Router) {
 			route.Get("/{account_id}", accountSvc.GetAccount)
 			route.Post("/", accountSvc.PostAccount)
+		})
+		r.Route("/transactions", func(route chi.Router) {
+			route.Post("/", transactionSvc.PostTransaction)
 		})
 	})
 
