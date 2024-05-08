@@ -19,11 +19,6 @@ type TransactionSvcImpl struct {
 	transactionRepo ports.TransactionRepository
 }
 
-type TransactionSvc interface {
-	PostAccount(w http.ResponseWriter, r *http.Request)
-	GetAccount(w http.ResponseWriter, r *http.Request)
-}
-
 func NewTransactionSvc(accountRepo ports.AccountRepository, transactionRepo ports.TransactionRepository) *TransactionSvcImpl {
 	return &TransactionSvcImpl{
 		accountRepo:     accountRepo,
@@ -31,9 +26,16 @@ func NewTransactionSvc(accountRepo ports.AccountRepository, transactionRepo port
 	}
 }
 
+// PostTransaction will accept a HTTP body containing a domain.Transaction object
+// The function will check if the inputs from domain.Transaction object are valid inputs
+// The function will check if the source account and destination account, denoted by SourceID and DestinationID, is a valid account within the system
+// The function will calculate the amount to be transferred from the balance of source account to destination account
+// The function will process the transaction according to the calculated balance of the source and destination account
+// The function will fix all calculated values to a floating point precision of 5
+// The function will return HTTP status OK and no body if the creation is successful
 func (srv *TransactionSvcImpl) PostTransaction(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	postTransactionBody := domain.PostTransaction{}
+	postTransactionBody := domain.Transaction{}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, static.ErrUnableToReadBody, http.StatusBadRequest)
@@ -71,7 +73,7 @@ func (srv *TransactionSvcImpl) PostTransaction(w http.ResponseWriter, r *http.Re
 		http.Error(w, static.ErrAmountNotValidNumber, http.StatusBadRequest)
 		return
 	}
-	if transferAmount < 0 {
+	if transferAmount <= 0 {
 		http.Error(w, static.ErrAmountCannotBeNegative, http.StatusBadRequest)
 		return
 	}
@@ -79,18 +81,18 @@ func (srv *TransactionSvcImpl) PostTransaction(w http.ResponseWriter, r *http.Re
 		http.Error(w, static.ErrAmountTooLarge, http.StatusBadRequest)
 		return
 	}
-	transferAmount = utils.ToFixed(transferAmount, 4)
+	transferAmount = utils.ToFixed(transferAmount, 5)
 
 	sourceAccount, err := srv.accountRepo.GetAccount(ctx, postTransactionBody.SourceID)
 	if err != nil {
 		log.Println("GetAccount - Source - error - ", err.Error())
-		http.Error(w, static.ErrGetSourceAccount, http.StatusBadRequest)
+		http.Error(w, static.ErrGetSourceAccount, http.StatusInternalServerError)
 		return
 	}
 	destinationAccount, err := srv.accountRepo.GetAccount(ctx, postTransactionBody.DestinationID)
 	if err != nil {
 		log.Println("GetAccount - Destination - error - ", err.Error())
-		http.Error(w, static.ErrGetDestinationAccount, http.StatusBadRequest)
+		http.Error(w, static.ErrGetDestinationAccount, http.StatusInternalServerError)
 		return
 	}
 	sourceAccountAmount, err := strconv.ParseFloat(sourceAccount.Balance, 64)
@@ -109,7 +111,7 @@ func (srv *TransactionSvcImpl) PostTransaction(w http.ResponseWriter, r *http.Re
 	}
 	sourceAccountAmount -= transferAmount
 	destinationAccountAmount += transferAmount
-	err = srv.transactionRepo.UpdateTransaction(ctx, postTransactionBody.SourceID, postTransactionBody.DestinationID, utils.ToFixed(sourceAccountAmount, 4), utils.ToFixed(destinationAccountAmount, 4))
+	err = srv.transactionRepo.ProcessTransaction(ctx, postTransactionBody, utils.ToFixed(sourceAccountAmount, 5), utils.ToFixed(destinationAccountAmount, 5))
 	if err != nil {
 		log.Println("UpdateTransaction error - ", err.Error())
 		http.Error(w, static.ErrUnableToCompleteTransaction, http.StatusInternalServerError)

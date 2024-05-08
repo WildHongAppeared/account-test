@@ -30,6 +30,7 @@ func TestGetAccount(t *testing.T) {
 		doMockRepo func(repository *mock_ports.MockAccountRepository)
 		want       domain.Account
 		err        string
+		statusCode int
 	}{
 		{
 			name:       "Test Case Positive",
@@ -53,8 +54,9 @@ func TestGetAccount(t *testing.T) {
 			account_id: "",
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 			},
-			want: domain.Account{},
-			err:  static.ErrIDLengthCannotBeZero,
+			want:       domain.Account{},
+			err:        static.ErrIDLengthCannotBeZero,
+			statusCode: 400,
 		},
 		{
 			name:       "Test Case Negative - Account parameter longer than 32 char",
@@ -63,8 +65,9 @@ func TestGetAccount(t *testing.T) {
 			account_id: "99999999999999999999999999999999999999999999999999999999999999999999",
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 			},
-			want: domain.Account{},
-			err:  static.ErrIDLengthTooLong,
+			want:       domain.Account{},
+			err:        static.ErrIDLengthTooLong,
+			statusCode: 400,
 		},
 		{
 			name:       "Test Case Negative - Account does not exist",
@@ -74,8 +77,9 @@ func TestGetAccount(t *testing.T) {
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 				repository.EXPECT().CheckAccountExists(gomock.Any(), gomock.Any()).Return(false)
 			},
-			want: domain.Account{},
-			err:  static.ErrAccountDoesNotExist,
+			want:       domain.Account{},
+			err:        static.ErrAccountDoesNotExist,
+			statusCode: 400,
 		},
 		{
 			name:       "Test Case Negative - Repository error",
@@ -89,8 +93,9 @@ func TestGetAccount(t *testing.T) {
 					errors.New("random error"),
 				)
 			},
-			want: domain.Account{},
-			err:  static.ErrUnableToRetrieveAccount,
+			want:       domain.Account{},
+			err:        static.ErrUnableToRetrieveAccount,
+			statusCode: 500,
 		},
 	}
 	for _, tc := range tests {
@@ -108,7 +113,7 @@ func TestGetAccount(t *testing.T) {
 			if len(tc.err) > 0 {
 				bodyBytes, _ := io.ReadAll(tc.rec.Body)
 				assert.Contains(t, string(bodyBytes), tc.err)
-				assert.Equal(t, 400, tc.rec.Result().StatusCode)
+				assert.Equal(t, tc.statusCode, tc.rec.Result().StatusCode)
 			} else {
 				var response domain.Account
 				_ = json.NewDecoder(tc.rec.Body).Decode(&response)
@@ -129,6 +134,7 @@ func TestPostAccount(t *testing.T) {
 		body       map[string]interface{}
 		doMockRepo func(repository *mock_ports.MockAccountRepository)
 		err        string
+		statusCode int
 	}{
 		{
 			name: "Test Case Positive",
@@ -154,7 +160,8 @@ func TestPostAccount(t *testing.T) {
 			},
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 			},
-			err: static.ErrIDLengthCannotBeZero,
+			err:        static.ErrIDLengthCannotBeZero,
+			statusCode: 400,
 		},
 		{
 			name: "Test Case Negative - Account parameter longer than 32 char",
@@ -165,7 +172,8 @@ func TestPostAccount(t *testing.T) {
 			},
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 			},
-			err: static.ErrIDLengthTooLong,
+			err:        static.ErrIDLengthTooLong,
+			statusCode: 400,
 		},
 		{
 			name: "Test Case Negative - Account already exist",
@@ -177,7 +185,8 @@ func TestPostAccount(t *testing.T) {
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 				repository.EXPECT().CheckAccountExists(gomock.Any(), gomock.Any()).Return(true)
 			},
-			err: static.ErrAccountAlreadyExist,
+			err:        static.ErrAccountAlreadyExist,
+			statusCode: 400,
 		},
 		{
 			name: "Test Case Negative - initial_balance not a number",
@@ -189,7 +198,8 @@ func TestPostAccount(t *testing.T) {
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 				repository.EXPECT().CheckAccountExists(gomock.Any(), gomock.Any()).Return(false)
 			},
-			err: static.ErrBalanceNotValidNumber,
+			err:        static.ErrBalanceNotValidNumber,
+			statusCode: 400,
 		},
 		{
 			name: "Test Case Negative - negative initial_balance",
@@ -201,7 +211,8 @@ func TestPostAccount(t *testing.T) {
 			doMockRepo: func(repository *mock_ports.MockAccountRepository) {
 				repository.EXPECT().CheckAccountExists(gomock.Any(), gomock.Any()).Return(false)
 			},
-			err: static.ErrBalanceCannotBeNegative,
+			err:        static.ErrBalanceCannotBeNegative,
+			statusCode: 400,
 		},
 		{
 			name: "Test Case Negative - repository error",
@@ -216,7 +227,8 @@ func TestPostAccount(t *testing.T) {
 					errors.New("random error"),
 				)
 			},
-			err: static.ErrCreatingAccount,
+			err:        static.ErrCreatingAccount,
+			statusCode: 500,
 		},
 	}
 	for _, tc := range tests {
@@ -232,7 +244,7 @@ func TestPostAccount(t *testing.T) {
 			if len(tc.err) > 0 {
 				bodyBytes, _ := io.ReadAll(tc.rec.Body)
 				assert.Contains(t, string(bodyBytes), tc.err)
-				assert.Equal(t, 400, tc.rec.Result().StatusCode)
+				assert.Equal(t, tc.statusCode, tc.rec.Result().StatusCode)
 			} else {
 				assert.Equal(t, 200, tc.rec.Result().StatusCode)
 			}

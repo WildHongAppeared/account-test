@@ -20,17 +20,18 @@ type AccountSvcImpl struct {
 	accountRepo ports.AccountRepository
 }
 
-type AccountSvc interface {
-	PostAccount(w http.ResponseWriter, r *http.Request)
-	GetAccount(w http.ResponseWriter, r *http.Request)
-}
-
 func NewAccountSvc(accountRepo ports.AccountRepository) *AccountSvcImpl {
 	return &AccountSvcImpl{
 		accountRepo: accountRepo,
 	}
 }
 
+// PostAccount will accept a HTTP body containing a domain.PostAccount object
+// The function will check if the inputs from domain.PostAccount object are valid inputs
+// The function will check if the id from domain.PostAccount belongs to an existing account
+// The function will fix the balance value to a floating point precision of 5
+// The function will create the account with the payload from domain.PostAccount in the account table if all checks are valid
+// The function will return HTTP status OK and no body if the creation is successful
 func (srv *AccountSvcImpl) PostAccount(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	postAccountBody := domain.PostAccount{}
@@ -71,7 +72,7 @@ func (srv *AccountSvcImpl) PostAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = srv.accountRepo.InsertAccount(ctx, postAccountBody.ID, utils.ToFixed(accountBalance, 4))
+	err = srv.accountRepo.InsertAccount(ctx, postAccountBody.ID, utils.ToFixed(accountBalance, 5))
 	if err != nil {
 		log.Println("InsertAccount error - ", err.Error())
 		http.Error(w, static.ErrCreatingAccount, http.StatusInternalServerError)
@@ -80,6 +81,10 @@ func (srv *AccountSvcImpl) PostAccount(w http.ResponseWriter, r *http.Request) {
 	utils.JSONResponse(w, http.StatusOK, nil)
 }
 
+// GetAccount will accept a HTTP path parameter of account_id
+// the function will check if account_id is a valid input
+// the function will check if the account_id belongs to an existing account in the system
+// the function will then retrieve all the account details associated with the account_id, returned as a domain.Account object
 func (srv *AccountSvcImpl) GetAccount(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	accountId := chi.URLParam(r, "account_id")

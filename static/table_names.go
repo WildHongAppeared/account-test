@@ -1,5 +1,6 @@
 package static
 
 const (
-	TableAccount = "account"
+	TableAccount     = "account"
+	TableTransaction = "transaction"
 )

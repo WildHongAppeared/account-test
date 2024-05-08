@@ -77,3 +77,40 @@ func (mr *MockAccountRepositoryMockRecorder) InsertAccount(ctx, id, balance inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertAccount", reflect.TypeOf((*MockAccountRepository)(nil).InsertAccount), ctx, id, balance)
 }
+
+// MockTransactionRepository is a mock of TransactionRepository interface.
+type MockTransactionRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockTransactionRepositoryMockRecorder
+}
+
+// MockTransactionRepositoryMockRecorder is the mock recorder for MockTransactionRepository.
+type MockTransactionRepositoryMockRecorder struct {
+	mock *MockTransactionRepository
+}
+
+// NewMockTransactionRepository creates a new mock instance.
+func NewMockTransactionRepository(ctrl *gomock.Controller) *MockTransactionRepository {
+	mock := &MockTransactionRepository{ctrl: ctrl}
+	mock.recorder = &MockTransactionRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTransactionRepository) EXPECT() *MockTransactionRepositoryMockRecorder {
+	return m.recorder
+}
+
+// ProcessTransaction mocks base method.
+func (m *MockTransactionRepository) ProcessTransaction(ctx context.Context, transaction domain.Transaction, source_amount, destination_amount float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessTransaction", ctx, transaction, source_amount, destination_amount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessTransaction indicates an expected call of ProcessTransaction.
+func (mr *MockTransactionRepositoryMockRecorder) ProcessTransaction(ctx, transaction, source_amount, destination_amount interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessTransaction", reflect.TypeOf((*MockTransactionRepository)(nil).ProcessTransaction), ctx, transaction, source_amount, destination_amount)
+}

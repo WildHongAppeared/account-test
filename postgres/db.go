@@ -16,6 +16,16 @@ var schema = `
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 	);
+
+	CREATE TABLE IF NOT EXISTS %s.transaction(
+		id SERIAL PRIMARY KEY NOT NULL,
+		source_account_id VARCHAR NOT NULL,
+		destination_account_id VARCHAR NOT NULL,
+		amount VARCHAR NOT NULL,
+		error_message VARCHAR,
+		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	);
 `
 
 const DriverName = "postgres"
@@ -45,7 +55,7 @@ func Init(dbConfig *DBConfig) (*sqlx.DB, error) {
 		return nil, err
 	}
 
-	schema = fmt.Sprintf(schema, dbConfig.Schema)
+	schema = fmt.Sprintf(schema, dbConfig.Schema, dbConfig.Schema)
 	client.MustExec(schema)
 
 	return client, nil

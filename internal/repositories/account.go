@@ -23,6 +23,8 @@ func NewAccountPort(db *sqlx.DB, dbConfig *postgres.DBConfig) *AccountPortImpl {
 	}
 }
 
+// InsertAccount will accept a string id and the initial balance of a new account object to be created in a new row in the account table
+// This function will return nil if there is no error and a error object when there is error
 func (i *AccountPortImpl) InsertAccount(ctx context.Context, id string, balance float64) error {
 	tx, err := i.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -61,6 +63,8 @@ func (i *AccountPortImpl) InsertAccount(ctx context.Context, id string, balance 
 	return nil
 }
 
+// CheckAccountExists will accept a account id and check whether the account already exists
+// This function will return a boolean value denoting  if an account exists or not (true for exists and vice versa)
 func (i *AccountPortImpl) CheckAccountExists(ctx context.Context, id string) bool {
 	var isExist bool
 	query := fmt.Sprintf(`SELECT EXISTS (SELECT 1 FROM %s.%s WHERE id = $1)`, i.dbConfig.Schema, static.TableAccount)
@@ -72,6 +76,8 @@ func (i *AccountPortImpl) CheckAccountExists(ctx context.Context, id string) boo
 
 }
 
+// CheckAccountExists will accept a account id and return the account details associated with the id
+// This function will return a account object as domain.Account and an error object if there is an error
 func (i *AccountPortImpl) GetAccount(ctx context.Context, id string) (*domain.Account, error) {
 	query := fmt.Sprintf(`
 	SELECT 

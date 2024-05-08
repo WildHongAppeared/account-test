@@ -12,5 +12,5 @@ type AccountRepository interface {
 }
 
 type TransactionRepository interface {
-	UpdateTransaction(ctx context.Context, source_id string, destination_id string, source_amount float64, destination_amount float64) error
+	ProcessTransaction(ctx context.Context, transaction domain.Transaction, source_amount float64, destination_amount float64) error
 }
